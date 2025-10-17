@@ -1,6 +1,8 @@
 package preview
 
 import (
+	"archive/zip"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,11 +13,6 @@ import (
 
 	"github.com/ArtemVlasov/TelegramArchiver/utils"
 )
-
-type PreviewResult struct {
-	Timestamp string `json:"timestamp"`
-	Preview   string `json:"preview"`
-}
 
 func Generate(inputPath, start, end, outPath string) error {
 	cmd := exec.Command(
@@ -53,14 +50,13 @@ func HandlePreview(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
 	defer os.Remove(videoPath)
 	defer os.Remove(audioPath)
 
-	hits, err := utils.Parse(audioPath, phrase, logger)
+	hits, err := utils.ParseAndMatch(audioPath, phrase, logger)
 	if err != nil {
 		logger.Println(err.Error())
 		http.Error(w, err.Error(), err.Code)
 		return
 	}
 
-	var results []PreviewResult
 	var outPaths []string
 	for i, hit := range hits {
 		parts := strings.Split(hit, "-->")
@@ -76,21 +72,27 @@ func HandlePreview(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
 			http.Error(w, "failed to generate preview", http.StatusInternalServerError)
 			continue
 		}
-
-		results = append(results, PreviewResult{
-			Timestamp: hit,
-			Preview:   "/static/" + filepath.Base(outPath),
-		})
-
 		outPaths = append(outPaths, outPath)
 	}
 
-	// for _, p := range outPaths {
-	// 	defer os.Remove(p)
-	// }
+	zipPath := filepath.Join(os.TempDir(), "previews.zip")
+	zipFile, _ := os.Create(zipPath)
+	zipWriter := zip.NewWriter(zipFile)
 
-	w.Header().Set("Content-Type", "video/mp4")
-	w.Header().Set("Content-Disposition", `attachment; filename="preview.mp4"`)
-	http.ServeFile(w, r, outPaths[0])
+	for _, p := range outPaths {
+		f, _ := os.Open(p)
+		defer f.Close()
+		defer os.Remove(p)
+		wr, _ := zipWriter.Create(filepath.Base(p))
+		io.Copy(wr, f)
+	}
+	zipWriter.Close()
+	zipFile.Close()
+
+	defer os.Remove(zipPath)
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", `attachment; filename="previews.zip"`)
+	http.ServeFile(w, r, zipPath)
 
 }
