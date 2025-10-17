@@ -15,9 +15,6 @@ type SearchResponse struct {
 	Hits   []string `json:"hits"`
 }
 
-
-
-
 func HandleSearch(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
 	start := time.Now()
 	phrase := r.FormValue("phrase")
@@ -35,15 +32,15 @@ func HandleSearch(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
 	defer os.Remove(videoPath)
 	defer os.Remove(audioPath)
 
-	if err != nil{
+	if err != nil {
 		logger.Println(err.Error())
 		http.Error(w, err.Error(), err.Code)
-		return 
+		return
 	}
 
-	hits, err := utils.Parse(audioPath, phrase, logger)
+	hits, err := utils.ParseAndMatch(audioPath, phrase, logger)
 
-	if err != nil{
+	if err != nil {
 		logger.Println(err.Error())
 		http.Error(w, err.Error(), err.Code)
 		return
