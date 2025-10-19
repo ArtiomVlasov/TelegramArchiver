@@ -8,6 +8,7 @@ import (
 
 	"time"
 
+	"github.com/ArtemVlasov/TelegramArchiver/services/findThemes"
 	"github.com/ArtemVlasov/TelegramArchiver/services/preview"
 	"github.com/ArtemVlasov/TelegramArchiver/services/search"
 )
@@ -32,6 +33,7 @@ func init() {
 func main() {
 	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {search.HandleSearch(w, r, logger)})
 	http.HandleFunc("/preview", func(w http.ResponseWriter, r *http.Request) {preview.HandlePreview(w, r, logger)})
+	http.HandleFunc("/themes", func(w http.ResponseWriter, r *http.Request) {findthemes.HandleThemes(w, r, logger)})
 	logger.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
