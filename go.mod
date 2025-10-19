@@ -1,4 +1,4 @@
-module github.com/ArtemVlasov/TelegramArchiver
+module media-analyzer
 
 go 1.22.2
 

@@ -8,9 +8,9 @@ import (
 
 	"time"
 
-	"github.com/ArtemVlasov/TelegramArchiver/services/findThemes"
-	"github.com/ArtemVlasov/TelegramArchiver/services/preview"
-	"github.com/ArtemVlasov/TelegramArchiver/services/search"
+	"media-analyzer/services/findThemes"
+	"media-analyzer/services/preview"
+	"media-analyzer/services/search"
 )
 
 

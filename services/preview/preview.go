@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ArtemVlasov/TelegramArchiver/utils"
+	"media-analyzer/utils"
 )
 
 func Generate(inputPath, start, end, outPath string) error {

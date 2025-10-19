@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ArtemVlasov/TelegramArchiver/utils"
+	"media-analyzer/utils"
 )
 
 type SearchResponse struct {

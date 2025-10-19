@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ArtemVlasov/TelegramArchiver/utils"
+	"media-analyzer/utils"
 )
 
 type SegmentResponse struct {
