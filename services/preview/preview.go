@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ArtemVlasov/TelegramArchiver/utils"
 )
@@ -30,6 +31,7 @@ func Generate(inputPath, start, end, outPath string) error {
 }
 
 func HandlePreview(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+	start := time.Now()
 	phrase := r.FormValue("phrase")
 	url := r.FormValue("url")
 
@@ -93,6 +95,7 @@ func HandlePreview(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
 
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="previews.zip"`)
+	logger.Printf("Finished processing in %s, hits: %d", time.Since(start), len(hits))
 	http.ServeFile(w, r, zipPath)
 
 }

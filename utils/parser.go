@@ -80,7 +80,6 @@ func Parse(audioPath string, logger *log.Logger) ([]Sentence, *ErrorWithCode) {
 	if len(sentences) == 0 {
 		return nil, &ErrorWithCode{"no sentences found", http.StatusNotFound}
 	}
-
 	return sentences, nil
 }
 

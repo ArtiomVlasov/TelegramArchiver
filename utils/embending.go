@@ -3,8 +3,8 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
+	"strconv"
 
 	"log"
 	"net/http"
@@ -32,9 +32,8 @@ type jinaResponse struct {
 	} `json:"data"`
 }
 
-func GenerateEmbeddings(sentences []Sentence, logger *log.Logger) ([]Sentence, error) {
+func GenerateEmbeddings(sentences []Sentence, logger *log.Logger) ([]Sentence, *ErrorWithCode) {
 	url := "https://api.jina.ai/v1/embeddings"
-
 	if err := godotenv.Load(".env"); err != nil {
 		logger.Printf("Error loading .env: %v", err)
 		return nil, &ErrorWithCode{"Error enabling .env file: " + err.Error(), http.StatusInternalServerError}
@@ -45,14 +44,11 @@ func GenerateEmbeddings(sentences []Sentence, logger *log.Logger) ([]Sentence, e
 		logger.Println("JINA_API_KEY not found in .env")
 		return nil, &ErrorWithCode{"Server error", http.StatusInternalServerError}
 	}
-	logger.Println(apiKey)
 
 	inputs := make([]string, len(sentences))
 	for i, s := range sentences {
 		inputs[i] = s.Text
 	}
-
-	logger.Println(inputs)
 
 	bodyData := jinaRequest{
 		Model: "jina-embeddings-v3",
@@ -62,44 +58,42 @@ func GenerateEmbeddings(sentences []Sentence, logger *log.Logger) ([]Sentence, e
 
 	body, err := json.Marshal(bodyData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+		return nil, &ErrorWithCode{"failed to marshal request: " + err.Error(), http.StatusInternalServerError}
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+		return nil,  &ErrorWithCode{"failed to create HTTP request: " + err.Error(), http.StatusInternalServerError}
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-
+	
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to call Jina API: %w", err)
+		return nil, &ErrorWithCode{"failed to call Jina API: " + err.Error(), http.StatusInternalServerError}
 	}
-	fmt.Println(resp.Body)
+	logger.Println(resp)
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, &ErrorWithCode{"failed to read response body: " + err.Error(), http.StatusInternalServerError}
 	}
-
-	// Парсим ответ
 	var result jinaResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, &ErrorWithCode{"failed to decode response: " + err.Error(), http.StatusInternalServerError}
 	}
-	
+	logger.Println(result)
+	logger.Println(resp)
+
 	if len(result.Data) != len(sentences) {
-		return nil, fmt.Errorf("unexpected embeddings count: got %d, want %d",
-			len(result.Data), len(sentences))
+		return nil, &ErrorWithCode{"unexpected embeddings count: got"+ strconv.Itoa(len(result.Data)) +", want "+ strconv.Itoa(len(sentences)), http.StatusInternalServerError}
 	}
 
 	for i := range sentences {
 		sentences[i].Embedding = result.Data[i].Embedding
 	}
-
 	return sentences, nil
 }
